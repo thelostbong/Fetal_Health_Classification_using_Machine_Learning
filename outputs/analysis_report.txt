@@ -1,0 +1,34 @@
+FETAL HEALTH CLASSIFICATION - ANALYSIS SUMMARY
+============================================================
+
+DATASET INFORMATION:
+Dataset shape: (2113, 22)
+Number of features: 21
+Number of samples: 2113
+
+TARGET DISTRIBUTION:
+  Normal: 1646 samples (77.9%)
+  Suspect: 292 samples (13.8%)
+  Pathological: 175 samples (8.3%)
+
+MODEL PERFORMANCE COMPARISON:
+Model                Accuracy   Precision  Recall     F1-Score  
+----------------------------------------------------------------------
+Logistic Regression  0.8700     0.8974     0.8700     0.8786    
+Random Forest        0.9456     0.9440     0.9456     0.9439    
+Svm                  0.9243     0.9263     0.9243     0.9252    
+
+BEST PERFORMING MODEL: Random Forest
+F1-Score: 0.9439
+
+TOP 10 MOST IMPORTANT FEATURES (Random Forest):
+   1. abnormal_short_term_variability     0.1443
+   2. percentage_of_time_with_abnormal_long_term_variability 0.1193
+   3. histogram_mean                      0.0996
+   4. histogram_median                    0.0791
+   5. mean_value_of_short_term_variability 0.0767
+   6. accelerations                       0.0733
+   7. histogram_mode                      0.0606
+   8. prolongued_decelerations            0.0544
+   9. mean_value_of_long_term_variability 0.0533
+  10. baseline value                      0.0468
