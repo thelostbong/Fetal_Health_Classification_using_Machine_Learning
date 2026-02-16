@@ -327,7 +327,7 @@ Contributions are welcome! If you'd like to improve this project:
 
 **Nayeemuddin Mohammed**
 - GitHub: [@thelostbong](https://github.com/thelostbong)
-- LinkedIn: [Your LinkedIn](https://linkedin.com/in/nayeemuddin-mohammed-03/)
+- LinkedIn: [nayeemuddin-mohammed-03](https://linkedin.com/in/nayeemuddin-mohammed-03/)
 
 ---
 
