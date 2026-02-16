@@ -325,8 +325,8 @@ Contributions are welcome! If you'd like to improve this project:
 
 ## 👨‍💻 Author
 
-**Your Name**
-- GitHub: [@Nayeemuddin Mohammed](https://github.com/thelostbong)
+**Nayeemuddin Mohammed**
+- GitHub: [@thelostbong](https://github.com/thelostbong)
 - LinkedIn: [Your LinkedIn](https://linkedin.com/in/nayeemuddin-mohammed-03/)
 
 ---
