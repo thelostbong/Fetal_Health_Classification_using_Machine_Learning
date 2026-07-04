@@ -5,7 +5,143 @@
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![Status](https://img.shields.io/badge/Status-Complete-success)
 
----
+---<h1 align="center">Fetal Health Classification (CTG)</h1>
+
+<p align="center">
+  Classifies cardiotocography readings into Normal / Suspect / Pathological with scikit-learn, handling the heavy class imbalance with SMOTE applied the right way — inside the training pipeline, never leaking into the test set. Random Forest reaches 94.6% accuracy on the held-out real-distribution test set.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/github/license/thelostbong/Fetal_Health_Classification_using_Machine_Learning" alt="License">
+  <img src="https://img.shields.io/github/last-commit/thelostbong/Fetal_Health_Classification_using_Machine_Learning" alt="Last commit">
+  <img src="https://img.shields.io/badge/python-3.8%2B-blue?logo=python&logoColor=white" alt="Python">
+  <img src="https://img.shields.io/badge/scikit--learn-f7931e?logo=scikitlearn&logoColor=white" alt="scikit-learn">
+</p>
+
+<p align="center">
+  <a href="Fetal_health_classification.pdf">Report (PDF)</a> ·
+  <a href="#results">Results</a> ·
+  <a href="#quickstart">Quickstart</a> ·
+  <a href="#method">Method</a> ·
+  <a href="#cite">Cite</a>
+</p>
+
+<p align="center">
+  <img src="outputs/model_comparison.png" alt="Accuracy, precision, recall and F1 across Logistic Regression, Random Forest and SVM" width="80%">
+</p>
+<p align="center"><em>Three models compared on the held-out test set; Random Forest leads on every metric.</em></p>
+
+> [!WARNING]
+> This is an academic / educational project, not a medical device. It is not validated for clinical use, and nothing here should drive a real diagnosis or treatment decision. CTG interpretation belongs to qualified clinicians.
+
+## Overview
+
+Cardiotocography (CTG) records fetal heart rate and uterine contractions during pregnancy. Clinicians read those traces to flag distress, but the readings are high-dimensional and the interesting cases are rare, which makes consistent triage hard. This project treats it as a supervised classification problem: given 21 numeric CTG features, predict whether a reading is Normal, Suspect, or Pathological.
+
+The dataset is badly imbalanced — most readings are Normal, and the Pathological class is the one you least want to miss. The core of the project is handling that imbalance honestly and comparing three standard classifiers on the result. The full write-up is in the [report](Fetal_health_classification.pdf).
+
+## Results
+
+Metrics below are read from the committed `outputs/analysis_report.txt`, measured on a 20% held-out test set that keeps the **original class distribution** (no synthetic samples in the test set):
+
+| Model | Accuracy | Precision | Recall | F1 |
+|---|---|---|---|---|
+| Logistic Regression | 0.870 | 0.897 | 0.870 | 0.879 |
+| **Random Forest** | **0.946** | **0.944** | **0.946** | **0.944** |
+| SVM | 0.924 | 0.926 | 0.924 | 0.925 |
+
+Random Forest wins across the board. Its per-class behaviour on the test set (from the confusion matrix):
+
+| Actual \ Predicted | Normal | Suspect | Pathological |
+|---|---|---|---|
+| **Normal** | 324 | 5 | 1 |
+| **Suspect** | 13 | 43 | 2 |
+| **Pathological** | 1 | 1 | 33 |
+
+Normal is caught 98% of the time and Pathological 94% (33/35). The weak spot is honest and worth stating: **Suspect recall is only ~74%** (43/58) — the borderline class is the hardest to separate, and most of its errors fall into Normal. For a triage tool that's the error you'd want to drive down next.
+
+<p align="center">
+  <img src="outputs/model_evaluation.png" alt="Confusion matrices for all three models" width="80%">
+</p>
+
+The features Random Forest leans on most (importances from the same report): abnormal short-term variability (0.144), percentage of time with abnormal long-term variability (0.119), histogram mean (0.100), histogram median (0.079), and mean short-term variability (0.077). Variability metrics dominate, which lines up with how clinicians read CTG traces.
+
+## Method
+
+The pipeline that makes the numbers trustworthy:
+
+1. **Load & de-duplicate** — the raw CSV has 2,126 CTG records; dropping exact duplicates leaves 2,113 (Normal 1,646 / Suspect 292 / Pathological 175).
+2. **Split first** — an 80/20 stratified train/test split *before* any resampling.
+3. **SMOTE inside the pipeline** — SMOTE and the `StandardScaler` are steps in an `imblearn.Pipeline`, so they're fit on training folds only. The test set is never oversampled or scaled with test statistics.
+4. **Train & compare** — Logistic Regression, Random Forest, SVM, each in its own pipeline.
+5. **Evaluate on the real distribution** — accuracy, precision, recall, F1, and a confusion matrix on the untouched test set.
+
+> [!NOTE]
+> Applying SMOTE *before* the split is a common and silent mistake that inflates accuracy by leaking synthetic neighbours of test points into training. This project avoids it by keeping SMOTE inside the fitted pipeline — the reported numbers are measured on genuinely unseen, real-distribution data.
+
+<p align="center">
+  <img src="outputs/before_after_smote_analysis.png" alt="Class distribution before and after SMOTE on the training set" width="80%">
+</p>
+<p align="center"><em>SMOTE balances the three classes in the training data (each to 1,316 samples); the test set is left untouched.</em></p>
+
+## Quickstart
+
+```bash
+git clone https://github.com/thelostbong/Fetal_Health_Classification_using_Machine_Learning.git
+cd Fetal_Health_Classification_using_Machine_Learning
+
+pip install -r requirements.txt
+python fetal_health_prediction.py
+```
+
+The script runs the full pipeline — EDA, SMOTE, training all three models, evaluation, plots into `outputs/`, and serialized models into `models/`.
+
+Using the trained model directly:
+
+```python
+import joblib
+model = joblib.load("models/random_forest_model.joblib")
+predictions = model.predict(X_new)   # X_new: 21 CTG features, same order as training
+```
+
+## Repository structure
+
+```
+.
+├── fetal_health_prediction.py       # full ML pipeline (EDA → SMOTE → train → eval → report)
+├── requirements.txt
+├── data/
+│   └── fetal_health.csv             # CTG dataset (2,126 records, 21 features, 3 classes)
+├── models/                          # serialized LR / RF / SVM (.joblib)
+├── outputs/                         # plots, analysis_report.txt, auto-generated PDF
+└── Fetal_health_classification.pdf  # project report
+```
+
+## Roadmap
+
+- **Raise Suspect recall** — the 74% on the borderline class is the main weakness; cost-sensitive learning or a tuned decision threshold would help more than a fancier model.
+- **Hyperparameter search** — GridSearch/RandomizedSearch with stratified k-fold instead of the current fixed settings.
+- **Gradient boosting** — XGBoost / LightGBM / CatBoost as stronger tabular baselines.
+- **Calibration** — probability calibration matters more than raw accuracy for a triage aid.
+
+## Cite
+
+```bibtex
+@techreport{mohammed2025fetalhealth,
+  title  = {Fetal Health Classification using Machine Learning},
+  author = {Mohammed, Nayeemuddin},
+  year   = {2025},
+  institution = {Deggendorf Institute of Technology},
+  note   = {https://github.com/thelostbong/Fetal_Health_Classification_using_Machine_Learning}
+}
+```
+
+## License · Acknowledgements · Contact
+
+MIT License — see [LICENSE](LICENSE). Dataset: the UCI/Kaggle Fetal Health Classification set derived from SisPorto CTG analysis (Ayres-de-Campos et al., 2000). SMOTE: Chawla et al. (2002).
+
+**Nayeemuddin Mohammed** — M.Sc. Applied AI for Digital Production Management, THD
+[GitHub](https://github.com/thelostbong) · [LinkedIn](https://linkedin.com/in/nayeemuddin-mohammed-03/) · nayeemuddin.mohammed@th-deg.de
 
 ## 📋 Overview
 
